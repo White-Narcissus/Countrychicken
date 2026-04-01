@@ -1,0 +1,12 @@
+# Files after compiling
+*.exe
+*.o
+*.obj
+*.dll
+
+# VSCode configuration
+.vscode/
+
+# Temporary files
+*.tmp
+*.log
