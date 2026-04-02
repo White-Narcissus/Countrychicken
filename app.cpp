@@ -15,22 +15,27 @@ int main(int argc, char *argv[])
 
     // Load chicken texture: chickenTex[direction][frame]
     // direction: 0=left, 1=right
-    Texture2D chickenTex[2][4];
-    for (int i = 0; i < 4; i++)
+    Texture2D henTex[2][2];
+    for (int i = 0; i < 2; i++)
     {
-        std::string leftPath = std::format("./Chickens Free/chicken_left{}.png", i);
-        chickenTex[0][i] = LoadTexture(leftPath.c_str());
+        std::string leftPath = std::format("./Chickens Free/hen_left{}.png", i);
+        henTex[0][i] = LoadTexture(leftPath.c_str());
 
-        std::string rightPath = std::format("./Chickens Free/chicken_right{}.png", i);
-        chickenTex[1][i] = LoadTexture(rightPath.c_str());
+        std::string rightPath = std::format("./Chickens Free/hen_right{}.png", i);
+        henTex[1][i] = LoadTexture(rightPath.c_str());
     }
+
+    // Load egg texture
+    Texture2D eggTex = LoadTexture("./Chickens Free/egg0.png");
 
     // Chicken status
     Vector2 pos = {100, 200};
+    Vector2 egg_pos = {0, 0};
+    int egg_exist = 0; // 0=exist, 1=not exist
     Vector2 velocity = {0, 0};
     float speed = 1.0f;            // move speed（frame/second）
     int direction = 1;             // 0=left, 1=right
-    int currentFrame = 0;          // current animation frame (0-3)
+    int currentFrame = 0;          // current animation frame (0-1)
     int frameCounter = 0;          // animation counter
     const int ANIMATION_SPEED = 8; // toggle animation per 8 frame
 
@@ -70,13 +75,21 @@ int main(int argc, char *argv[])
             if (frameCounter >= ANIMATION_SPEED)
             {
                 frameCounter = 0;
-                currentFrame = (currentFrame + 1) % 4;
+                currentFrame = (currentFrame + 1) % 2;
             }
         }
 
         // ========== 3. Update location ==========
         pos.x += velocity.x * speed;
         pos.y += velocity.y * speed;
+
+        // Hen lays an egg when KEY_L is pressed
+        if (IsKeyPressed(KEY_L))
+        {
+            egg_pos.x = pos.x;
+            egg_pos.y = pos.y + 16;
+            egg_exist = 1;
+        }
 
         // border restrictions
         if (pos.x < 0)
@@ -111,7 +124,9 @@ int main(int argc, char *argv[])
         ClearBackground(WHITE); // clear the screen first
 
         DrawTexture(bgTex, 0, 0, WHITE);
-        DrawTextureV(chickenTex[direction][currentFrame], pos, WHITE);
+        DrawTextureV(henTex[direction][currentFrame], pos, WHITE);
+        if (egg_exist)
+            DrawTextureV(eggTex, egg_pos, WHITE);
         DrawFPS(0, 0);
 
         EndDrawing();
@@ -119,11 +134,12 @@ int main(int argc, char *argv[])
 
     // ========== 6. release resource ==========
     UnloadTexture(bgTex);
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 2; i++)
     {
-        UnloadTexture(chickenTex[0][i]);
-        UnloadTexture(chickenTex[1][i]);
+        UnloadTexture(henTex[0][i]);
+        UnloadTexture(henTex[1][i]);
     }
+    UnloadTexture(eggTex);
     CloseWindow();
 
     return 0;
