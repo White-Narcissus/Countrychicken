@@ -4,17 +4,17 @@
 
 int main(int argc, char *argv[])
 {
-    // 创建窗口
-    InitWindow(400, 300, "Adventure King");
+    // Create window
+    InitWindow(400, 300, "Countrychicken");
     SetTargetFPS(60);
 
-    // 加载背景纹理
+    // Load background texture
     Texture2D bgTex = LoadTexture("./pixel art forest/background1.png");
     if (!IsTextureValid(bgTex))
         std::cout << "fail to load background image." << std::endl;
 
-    // 加载小鸡纹理：chickenTex[方向][帧]
-    // 方向: 0=左, 1=右
+    // Load chicken texture: chickenTex[direction][frame]
+    // direction: 0=left, 1=right
     Texture2D chickenTex[2][4];
     for (int i = 0; i < 4; i++)
     {
@@ -25,46 +25,46 @@ int main(int argc, char *argv[])
         chickenTex[1][i] = LoadTexture(rightPath.c_str());
     }
 
-    // 小鸡状态
+    // Chicken status
     Vector2 pos = {100, 200};
     Vector2 velocity = {0, 0};
-    float speed = 1.0f;            // 移动速度（像素/秒）
-    int direction = 1;             // 0=左, 1=右
-    int currentFrame = 0;          // 当前动画帧 (0-3)
-    int frameCounter = 0;          // 动画计数器
-    const int ANIMATION_SPEED = 8; // 每8帧切换一次动画
+    float speed = 1.0f;            // move speed（frame/second）
+    int direction = 1;             // 0=left, 1=right
+    int currentFrame = 0;          // current animation frame (0-3)
+    int frameCounter = 0;          // animation counter
+    const int ANIMATION_SPEED = 8; // toggle animation per 8 frame
 
-    // 游戏主循环
+    // Game main cycle
     while (!WindowShouldClose())
     {
-        // ========== 1. 输入处理 ==========
+        // ========== 1. Deal with input ==========
         velocity = {0, 0};
 
-        if (IsKeyDown(KEY_UP))
+        if (IsKeyDown(KEY_W))
             velocity.y = -1;
-        if (IsKeyDown(KEY_DOWN))
+        if (IsKeyDown(KEY_S))
             velocity.y = 1;
-        if (IsKeyDown(KEY_LEFT))
+        if (IsKeyDown(KEY_A))
         {
             velocity.x = -1;
-            direction = 0; // 向左
+            direction = 0; // To the left
         }
-        if (IsKeyDown(KEY_RIGHT))
+        if (IsKeyDown(KEY_D))
         {
             velocity.x = 1;
-            direction = 1; // 向右
+            direction = 1; // To the right
         }
 
-        // 松开方向键时重置动画计数器
-        if (IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT))
+        // When key(WSAD) is released, reset framecounter and currentframe
+        if (IsKeyReleased(KEY_W) || IsKeyReleased(KEY_S) || IsKeyReleased(KEY_A) || IsKeyReleased(KEY_D))
         {
             frameCounter = 0;
             currentFrame = 0;
         }
 
-        // ========== 2. 动画更新 ==========
-        // 只有移动时才更新动画
-        if (velocity.x != 0)
+        // ========== 2. Animation update ==========
+        // Only update animation when moving
+        if (velocity.x || velocity.y)
         {
             frameCounter++;
             if (frameCounter >= ANIMATION_SPEED)
@@ -74,11 +74,11 @@ int main(int argc, char *argv[])
             }
         }
 
-        // ========== 3. 位置更新 ==========
+        // ========== 3. Update location ==========
         pos.x += velocity.x * speed;
         pos.y += velocity.y * speed;
 
-        // 边界限制（防止走出画面）
+        // border restrictions
         if (pos.x < 0)
             pos.x = 0;
         if (pos.x > GetScreenWidth() - 16)
@@ -88,27 +88,27 @@ int main(int argc, char *argv[])
         if (pos.y > GetScreenHeight() - 16)
             pos.y = GetScreenHeight() - 16;
 
-        // ========== 4. 鼠标输入处理 ==========
+        // ========== 4. handle mouse input ==========
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             std::cout << "mouse button left pressed" << std::endl;
             std::cout << std::format(
-                "current coordinates are ({}, {})",
-                GetMouseX(), GetMouseY())
-                << std::endl;
+                             "current coordinates are ({}, {})",
+                             GetMouseX(), GetMouseY())
+                      << std::endl;
         }
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
             std::cout << "mouse button right pressed" << std::endl;
             std::cout << std::format(
-                "current coordinates are ({}, {})",
-                GetMouseX(), GetMouseY())
-                << std::endl;
+                             "current coordinates are ({}, {})",
+                             GetMouseX(), GetMouseY())
+                      << std::endl;
         }
 
-        // ========== 5. 绘制 ==========
+        // ========== 5. Drawing ==========
         BeginDrawing();
-        ClearBackground(WHITE); // 先清屏
+        ClearBackground(WHITE); // clear the screen first
 
         DrawTexture(bgTex, 0, 0, WHITE);
         DrawTextureV(chickenTex[direction][currentFrame], pos, WHITE);
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
         EndDrawing();
     }
 
-    // ========== 6. 释放资源 ==========
+    // ========== 6. release resource ==========
     UnloadTexture(bgTex);
     for (int i = 0; i < 4; i++)
     {
