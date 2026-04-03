@@ -10,6 +10,7 @@ struct Egg
 };
 
 Vector2 &borderRestrict(Vector2 &);
+bool clickTexture(const Vector2 &, int, int);
 
 int main(int argc, char *argv[])
 {
@@ -22,7 +23,7 @@ int main(int argc, char *argv[])
     if (!IsTextureValid(bgTex))
         std::cout << "fail to load background image." << std::endl;
 
-    // Load chicken texture: chickenTex[direction][frame]
+    // Load hen texture: henTex[direction][frame]
     // direction: 0=left, 1=right
     Texture2D henTex[2][2];
     for (int i = 0; i < 2; i++)
@@ -34,17 +35,39 @@ int main(int argc, char *argv[])
         henTex[1][i] = LoadTexture(rightPath.c_str());
     }
 
+    // Load chick texture: chickTex[direction][frame]
+    // direction: 0=left, 1=right
+    Texture2D chickTex[2][2];
+    for (int i = 0; i < 2; i++)
+    {
+        std::string leftPath = std::format("./Chickens Free/chick_left{}.png", i);
+        chickTex[0][i] = LoadTexture(leftPath.c_str());
+
+        std::string rightPath = std::format("./Chickens Free/chick_right{}.png", i);
+        chickTex[1][i] = LoadTexture(rightPath.c_str());
+    }
+
     // Load egg texture
     Texture2D eggTex = LoadTexture("./Chickens Free/egg0.png");
 
-    // Chicken status
-    Vector2 henpos = {100, 200};
-    Vector2 velocity = {0, 0};
-    float speed = 1.0f;            // move speed（frame/second）
-    int direction = 1;             // 0=left, 1=right
-    int currentFrame = 0;          // current animation frame (0-1)
-    int frameCounter = 0;          // animation counter
     const int ANIMATION_SPEED = 8; // toggle animation per 8 frame
+
+    // Hen status
+    Vector2 henpos = {100, 200};
+    Vector2 hen_velocity = {0, 0};
+    float hen_speed = 1.0f;   // move speed of hen（frame/second）
+    int hen_direction = 1;    // 0=left, 1=right
+    int hen_frame = 0; // current animation frame for hen (0-1)
+    int hen_frameCounter = 0; // animation counter for hen
+
+    // Chick status
+    Vector2 chickpos = {0, 0};
+    Vector2 chick_velocity = {0, 0};
+    float chick_speed = 0.5f;   // move speed of chick（frame/second）
+    int chick_direction = 0;    // 0=left, 1=right
+    int chick_frame = 0; // current animation frame for chick (0-1)
+    int chick_frameCounter = 0; // animation counter for chick
+    bool drawchick = false;
 
     // Using vector store eggs
     std::vector<Egg> eggs;
@@ -53,45 +76,97 @@ int main(int argc, char *argv[])
     while (!WindowShouldClose())
     {
         // ========== 1. Deal with input ==========
-        velocity = {0, 0};
+        hen_velocity = {0, 0};
 
+        // Key events for hen
         if (IsKeyDown(KEY_W))
-            velocity.y = -1;
+            hen_velocity.y = -1;
         if (IsKeyDown(KEY_S))
-            velocity.y = 1;
+            hen_velocity.y = 1;
         if (IsKeyDown(KEY_A))
         {
-            velocity.x = -1;
-            direction = 0; // To the left
+            hen_velocity.x = -1;
+            hen_direction = 0; // To the left
         }
         if (IsKeyDown(KEY_D))
         {
-            velocity.x = 1;
-            direction = 1; // To the right
+            hen_velocity.x = 1;
+            hen_direction = 1; // To the right
         }
 
-        // When key(WSAD) is released, reset framecounter and currentframe
-        if (IsKeyReleased(KEY_W) || IsKeyReleased(KEY_S) || IsKeyReleased(KEY_A) || IsKeyReleased(KEY_D))
+        // When key(WSAD) is released, reset hen_frameCounter and hen_frame
+        if (
+            IsKeyReleased(KEY_W) ||
+            IsKeyReleased(KEY_S) ||
+            IsKeyReleased(KEY_A) ||
+            IsKeyReleased(KEY_D))
         {
-            frameCounter = 0;
-            currentFrame = 0;
+            hen_frameCounter = 0;
+            hen_frame = 0;
         }
 
         // ========== 2. Animation update ==========
-        // Only update animation when moving
-        if (velocity.x || velocity.y)
+        // Only update animation when moving for hen
+        if (hen_velocity.x || hen_velocity.y)
         {
-            frameCounter++;
-            if (frameCounter >= ANIMATION_SPEED)
+            hen_frameCounter++;
+            if (hen_frameCounter >= ANIMATION_SPEED)
             {
-                frameCounter = 0;
-                currentFrame = (currentFrame + 1) % 2;
+                hen_frameCounter = 0;
+                hen_frame = (hen_frame + 1) % 2;
             }
         }
 
         // ========== 3. Update location ==========
-        henpos.x += velocity.x * speed;
-        henpos.y += velocity.y * speed;
+        henpos.x += hen_velocity.x * hen_speed;
+        henpos.y += hen_velocity.y * hen_speed;
+
+        if (drawchick)
+        {
+            chick_velocity = {0, 0};
+            // Key events for chick
+            if (IsKeyDown(KEY_UP))
+                chick_velocity.y = -1;
+            if (IsKeyDown(KEY_DOWN))
+                chick_velocity.y = 1;
+            if (IsKeyDown(KEY_LEFT))
+            {
+                chick_velocity.x = -1;
+                chick_direction = 0; // To the left
+            }
+            if (IsKeyDown(KEY_RIGHT))
+            {
+                chick_velocity.x = 1;
+                chick_direction = 1; // To the right
+            }
+
+            // When key(up, down, left, right) is released,
+            // reset chick_frameCounter and chick_frame
+            if (
+                IsKeyReleased(KEY_UP) ||
+                IsKeyReleased(KEY_DOWN) ||
+                IsKeyReleased(KEY_LEFT) ||
+                IsKeyReleased(KEY_RIGHT))
+            {
+                chick_frameCounter = 0;
+                chick_frame = 0;
+            }
+
+            // Only update animation when moving for chick
+            if (chick_velocity.x || chick_velocity.y)
+            {
+                chick_frameCounter++;
+                if (chick_frameCounter >= ANIMATION_SPEED)
+                {
+                    chick_frameCounter = 0;
+                    chick_frame = (chick_frame + 1) % 2;
+                }
+            }
+
+            chickpos.x += chick_velocity.x * chick_speed;
+            chickpos.y += chick_velocity.y * chick_speed;
+            borderRestrict(chickpos);
+        }
 
         // Hen lays an egg when KEY_L is pressed
         if (IsKeyPressed(KEY_L))
@@ -114,7 +189,7 @@ int main(int argc, char *argv[])
                            { return current_time - egg.spawntime > 5.0; }),
             eggs.end());
 
-        // border restrictions for hen
+        // border restrictions for hen and chick
         borderRestrict(henpos);
         // border restrictions for eggs
         for (auto &egg : eggs)
@@ -123,23 +198,36 @@ int main(int argc, char *argv[])
         }
 
         // ========== 4. handle mouse input ==========
+
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            std::cout << "mouse button left pressed" << std::endl;
-            std::cout
-                << std::format(
-                       "current coordinates are ({}, {})",
-                       GetMouseX(), GetMouseY())
-                << std::endl;
+            for (const auto &egg : eggs)
+            {
+                if (clickTexture(egg.pos, GetMouseX(), GetMouseY()))
+                {
+                    if (drawchick)
+                    {
+                        std::cout
+                            << "At the same time, only one chick can exist!"
+                            << std::endl;
+                        break;
+                    }
+                    else
+                    {
+                        drawchick = true;
+                        chickpos = egg.pos;
+                        break;
+                    }
+                }
+            }
         }
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
-            std::cout << "mouse button right pressed" << std::endl;
-            std::cout
-                << std::format(
-                       "current coordinates are ({}, {})",
-                       GetMouseX(), GetMouseY())
-                << std::endl;
+            if (drawchick &&
+                clickTexture(chickpos, GetMouseX(), GetMouseY()))
+            {
+                drawchick = false;
+            }
         }
 
         // ========== 5. Drawing ==========
@@ -147,7 +235,10 @@ int main(int argc, char *argv[])
         ClearBackground(WHITE); // clear the screen first
 
         DrawTexture(bgTex, 0, 0, WHITE);
-        DrawTextureV(henTex[direction][currentFrame], henpos, WHITE);
+        DrawTextureV(henTex[hen_direction][hen_frame], henpos, WHITE);
+        if (drawchick)
+            DrawTextureV(chickTex[chick_direction][chick_frame],
+                         chickpos, WHITE);
         for (const auto &egg : eggs)
         {
             DrawTextureV(eggTex, egg.pos, WHITE);
@@ -163,6 +254,11 @@ int main(int argc, char *argv[])
     {
         UnloadTexture(henTex[0][i]);
         UnloadTexture(henTex[1][i]);
+    }
+    for (int i = 0; i < 2; i++)
+    {
+        UnloadTexture(chickTex[0][i]);
+        UnloadTexture(chickTex[1][i]);
     }
     UnloadTexture(eggTex);
     CloseWindow();
@@ -182,4 +278,16 @@ Vector2 &borderRestrict(Vector2 &pos)
     if (pos.y > GetScreenHeight() - 16)
         pos.y = GetScreenHeight() - 16;
     return pos;
+}
+
+bool clickTexture(const Vector2 &pos, int mouse_posx, int mouse_posy)
+{
+
+    if (
+        (
+            pos.x < mouse_posx && pos.x + 16 > mouse_posx) &&
+        (pos.y < mouse_posy && pos.y + 16 > mouse_posy))
+        return true;
+    else
+        return false;
 }
