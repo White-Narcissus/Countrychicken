@@ -1,6 +1,15 @@
 #include <iostream>
 #include <format>
+#include <vector>
 #include "raylib.h"
+
+struct Egg
+{
+    Vector2 pos;
+    double spawntime;
+};
+
+Vector2 &borderRestrict(Vector2 &);
 
 int main(int argc, char *argv[])
 {
@@ -29,15 +38,16 @@ int main(int argc, char *argv[])
     Texture2D eggTex = LoadTexture("./Chickens Free/egg0.png");
 
     // Chicken status
-    Vector2 pos = {100, 200};
-    Vector2 egg_pos = {0, 0};
-    int egg_exist = 0; // 0=exist, 1=not exist
+    Vector2 henpos = {100, 200};
     Vector2 velocity = {0, 0};
     float speed = 1.0f;            // move speed（frame/second）
     int direction = 1;             // 0=left, 1=right
     int currentFrame = 0;          // current animation frame (0-1)
     int frameCounter = 0;          // animation counter
     const int ANIMATION_SPEED = 8; // toggle animation per 8 frame
+
+    // Using vector store eggs
+    std::vector<Egg> eggs;
 
     // Game main cycle
     while (!WindowShouldClose())
@@ -80,43 +90,56 @@ int main(int argc, char *argv[])
         }
 
         // ========== 3. Update location ==========
-        pos.x += velocity.x * speed;
-        pos.y += velocity.y * speed;
+        henpos.x += velocity.x * speed;
+        henpos.y += velocity.y * speed;
 
         // Hen lays an egg when KEY_L is pressed
         if (IsKeyPressed(KEY_L))
         {
-            egg_pos.x = pos.x;
-            egg_pos.y = pos.y + 16;
-            egg_exist = 1;
+            Vector2 newEggPos = {henpos.x, henpos.y + 16};
+            Egg newegg = {newEggPos, GetTime()};
+            eggs.push_back(newegg);
+            std::cout
+                << std::format(
+                       "Lay egg! There are {} eggs on the ground. (at {:.2f}s)",
+                       eggs.size(), GetTime())
+                << std::endl;
         }
 
-        // border restrictions
-        if (pos.x < 0)
-            pos.x = 0;
-        if (pos.x > GetScreenWidth() - 16)
-            pos.x = GetScreenWidth() - 16;
-        if (pos.y < 0)
-            pos.y = 0;
-        if (pos.y > GetScreenHeight() - 16)
-            pos.y = GetScreenHeight() - 16;
+        double current_time = GetTime();
+        eggs.erase(
+            std::remove_if(eggs.begin(),
+                           eggs.end(),
+                           [current_time](const Egg &egg)
+                           { return current_time - egg.spawntime > 5.0; }),
+            eggs.end());
+
+        // border restrictions for hen
+        borderRestrict(henpos);
+        // border restrictions for eggs
+        for (auto &egg : eggs)
+        {
+            borderRestrict(egg.pos);
+        }
 
         // ========== 4. handle mouse input ==========
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             std::cout << "mouse button left pressed" << std::endl;
-            std::cout << std::format(
-                             "current coordinates are ({}, {})",
-                             GetMouseX(), GetMouseY())
-                      << std::endl;
+            std::cout
+                << std::format(
+                       "current coordinates are ({}, {})",
+                       GetMouseX(), GetMouseY())
+                << std::endl;
         }
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
             std::cout << "mouse button right pressed" << std::endl;
-            std::cout << std::format(
-                             "current coordinates are ({}, {})",
-                             GetMouseX(), GetMouseY())
-                      << std::endl;
+            std::cout
+                << std::format(
+                       "current coordinates are ({}, {})",
+                       GetMouseX(), GetMouseY())
+                << std::endl;
         }
 
         // ========== 5. Drawing ==========
@@ -124,9 +147,11 @@ int main(int argc, char *argv[])
         ClearBackground(WHITE); // clear the screen first
 
         DrawTexture(bgTex, 0, 0, WHITE);
-        DrawTextureV(henTex[direction][currentFrame], pos, WHITE);
-        if (egg_exist)
-            DrawTextureV(eggTex, egg_pos, WHITE);
+        DrawTextureV(henTex[direction][currentFrame], henpos, WHITE);
+        for (const auto &egg : eggs)
+        {
+            DrawTextureV(eggTex, egg.pos, WHITE);
+        }
         DrawFPS(0, 0);
 
         EndDrawing();
@@ -143,4 +168,18 @@ int main(int argc, char *argv[])
     CloseWindow();
 
     return 0;
+}
+
+// border restrictions for position of objects
+Vector2 &borderRestrict(Vector2 &pos)
+{
+    if (pos.x < 0)
+        pos.x = 0;
+    if (pos.x > GetScreenWidth() - 16)
+        pos.x = GetScreenWidth() - 16;
+    if (pos.y < 0)
+        pos.y = 0;
+    if (pos.y > GetScreenHeight() - 16)
+        pos.y = GetScreenHeight() - 16;
+    return pos;
 }
