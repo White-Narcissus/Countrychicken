@@ -4,11 +4,23 @@
 #include "raylib.h"
 #include <format>
 #include <vector>
+#include <memory>
+
+struct Texture2DDeleter
+{
+    void operator()(Texture2D *tex) const
+    {
+        if (tex && tex->id)
+        {
+            UnloadTexture(*tex);
+        }
+    }
+};
 
 class Chick
 {
     // Chick properties
-    Texture2D ch_tex[2][2];
+    std::shared_ptr<Texture2D> ch_tex[2][2];
     Vector2 ch_pos;
     Vector2 ch_velocity;
     float ch_speed;   // move speed of chick（frame/second）
@@ -20,7 +32,9 @@ class Chick
 public:
     // Chick methods
     Chick();
-    ~Chick();
+    ~Chick() = default;
+    Chick(const Chick &) = default;
+    Chick &operator=(const Chick &) = default;
     void control(std::vector<int> velocity, std::vector<int> direction);
     void update(const int ANIMATION_SPEED);
     Vector2 &getpos();

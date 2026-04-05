@@ -75,13 +75,6 @@ int main(int argc, char *argv[])
             }
         }
 
-        // for (auto &chick : chicks)
-        // {
-        //     // 添加调试输出确认纹理是否有效
-        //     std::cout << "Left texture id: " << chick.ch_tex[0][0].id << std::endl;
-        //     std::cout << "Right texture id: " << chick.ch_tex[1][0].id << std::endl;
-        // }
-
         // Drawing
         BeginDrawing();
         ClearBackground(WHITE); // clear the screen first

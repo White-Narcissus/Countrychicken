@@ -3,33 +3,20 @@
 #include "raylib.h"
 
 Chick::Chick()
+    : ch_pos{0, 0}, ch_velocity{0, 0},
+      ch_speed(0.5f), ch_direction(0),
+      ch_frame(0), ch_fcounter(0)
 {
     std::cout << "Chick constructor called!" << std::endl;
     for (int i = 0; i < 2; i++)
     {
         std::string leftPath = std::format("./Chickens Free/chick_left{}.png", i);
-        ch_tex[0][i] = LoadTexture(leftPath.c_str());
-        std::cout << "Loaded: " << leftPath << " -> id=" << ch_tex[0][i].id << std::endl;
+        Texture2D *leftTex = new Texture2D(LoadTexture(leftPath.c_str()));
+        ch_tex[0][i] = std::shared_ptr<Texture2D>(leftTex, Texture2DDeleter());
 
         std::string rightPath = std::format("./Chickens Free/chick_right{}.png", i);
-        ch_tex[1][i] = LoadTexture(rightPath.c_str());
-        std::cout << "Loaded: " << rightPath << " -> id=" << ch_tex[1][i].id << std::endl;
-    }
-    ch_pos = {0, 0};
-    ch_velocity = {0, 0};
-    ch_speed = 0.5f;  // move speed of chick（frame/second）
-    ch_direction = 0; // 0=left, 1=right
-    ch_frame = 0;     // current animation frame for chick (0-1)
-    ch_fcounter = 0;  // animation counter for chick
-    id = GetTime();
-}
-
-Chick::~Chick()
-{
-    for (int i = 0; i < 2; i++)
-    {
-        UnloadTexture(ch_tex[0][i]);
-        UnloadTexture(ch_tex[1][i]);
+        Texture2D *rightTex = new Texture2D(LoadTexture(rightPath.c_str()));
+        ch_tex[1][i] = std::shared_ptr<Texture2D>(rightTex, Texture2DDeleter());
     }
 }
 
@@ -66,9 +53,6 @@ Vector2 &Chick::getpos()
 
 void Chick::drawChick()
 {
-    // std::cout << id << ":\t";
-    // std::cout << "Drawing chick at (" << ch_pos.x << ", " << ch_pos.y
-    //           << ") direction=" << ch_direction << std::endl;
-    DrawTextureV(ch_tex[ch_direction][ch_frame],
+    DrawTextureV(*ch_tex[ch_direction][ch_frame],
                  ch_pos, WHITE);
 }
