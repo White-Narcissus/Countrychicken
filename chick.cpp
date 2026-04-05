@@ -3,34 +3,76 @@
 #include "raylib.h"
 
 Chick::Chick()
+    : ch_pos({0, 0}), ch_velocity({0, 0}),
+      ch_speed(0.5f), ch_direction(0),
+      ch_frame(0), ch_fcounter(0)
 {
     std::cout << "Chick constructor called!" << std::endl;
     for (int i = 0; i < 2; i++)
     {
         std::string leftPath = std::format("./Chickens Free/chick_left{}.png", i);
         ch_tex[0][i] = LoadTexture(leftPath.c_str());
-        std::cout << "Loaded: " << leftPath << " -> id=" << ch_tex[0][i].id << std::endl;
 
         std::string rightPath = std::format("./Chickens Free/chick_right{}.png", i);
         ch_tex[1][i] = LoadTexture(rightPath.c_str());
-        std::cout << "Loaded: " << rightPath << " -> id=" << ch_tex[1][i].id << std::endl;
     }
-    ch_pos = {0, 0};
-    ch_velocity = {0, 0};
-    ch_speed = 0.5f;  // move speed of chick（frame/second）
-    ch_direction = 0; // 0=left, 1=right
-    ch_frame = 0;     // current animation frame for chick (0-1)
-    ch_fcounter = 0;  // animation counter for chick
-    id = GetTime();
 }
 
+// 移动构造
+Chick::Chick(Chick &&other) noexcept
+    : ch_pos(other.ch_pos),
+      ch_velocity(other.ch_velocity),
+      ch_speed(other.ch_speed),
+      ch_direction(other.ch_direction),
+      ch_frame(other.ch_frame),
+      ch_fcounter(other.ch_fcounter)
+{
+    // 转移纹理所有权
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 2; j++)
+        {
+            ch_tex[i][j] = other.ch_tex[i][j];
+            other.ch_tex[i][j].id = 0; // 让 other 不再拥有纹理
+        }
+}
+
+// 移动赋值
+Chick &Chick::operator=(Chick &&other) noexcept
+{
+    if (this != &other)
+    {
+        // 释放自己的纹理
+        for (int i = 0; i < 2; i++)
+            for (int j = 0; j < 2; j++)
+                if (ch_tex[i][j].id)
+                    UnloadTexture(ch_tex[i][j]);
+
+        // 转移数据
+        ch_pos = other.ch_pos;
+        ch_velocity = other.ch_velocity;
+        ch_speed = other.ch_speed;
+        ch_direction = other.ch_direction;
+        ch_frame = other.ch_frame;
+        ch_fcounter = other.ch_fcounter;
+
+        // 转移纹理
+        for (int i = 0; i < 2; i++)
+            for (int j = 0; j < 2; j++)
+            {
+                ch_tex[i][j] = other.ch_tex[i][j];
+                other.ch_tex[i][j].id = 0;
+            }
+    }
+    return *this;
+}
+
+// 析构：只有真正拥有纹理的对象才会释放
 Chick::~Chick()
 {
     for (int i = 0; i < 2; i++)
-    {
-        UnloadTexture(ch_tex[0][i]);
-        UnloadTexture(ch_tex[1][i]);
-    }
+        for (int j = 0; j < 2; j++)
+            if (ch_tex[i][j].id)
+                UnloadTexture(ch_tex[i][j]);
 }
 
 void Chick::control(std::vector<int> velocity, std::vector<int> direction)
@@ -66,9 +108,7 @@ Vector2 &Chick::getpos()
 
 void Chick::drawChick()
 {
-    // std::cout << id << ":\t";
-    // std::cout << "Drawing chick at (" << ch_pos.x << ", " << ch_pos.y
-    //           << ") direction=" << ch_direction << std::endl;
-    DrawTextureV(ch_tex[ch_direction][ch_frame],
-                 ch_pos, WHITE);
+    DrawTextureV(
+        ch_tex[ch_direction][ch_frame],
+        ch_pos, WHITE);
 }

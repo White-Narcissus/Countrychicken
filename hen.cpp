@@ -1,6 +1,9 @@
 #include "hen.h"
 
 Hen::Hen()
+    : h_pos{100, 200}, h_velocity{0, 0},
+      h_speed(1.0f), h_direction(1),
+      h_frame(0), h_fcounter(0)
 {
     for (int i = 0; i < 2; i++)
     {
@@ -10,14 +13,6 @@ Hen::Hen()
         std::string rightPath = std::format("./Chickens Free/hen_right{}.png", i);
         h_tex[1][i] = LoadTexture(rightPath.c_str());
     }
-    std::cout << "Hen left texture id: " << h_tex[0][0].id << std::endl;
-    std::cout << "Hen right texture id: " << h_tex[1][0].id << std::endl;
-    h_pos = {100, 200};  // set hen's position
-    h_velocity = {0, 0}; // set hen's velocity
-    h_speed = 1.0f;      // move speed of hen（frame/second）
-    h_direction = 1;     // 0=left, 1=right
-    h_frame = 0;         // current animation frame for hen (0-1)
-    h_fcounter = 0;      // animation counter for hen
 }
 
 Hen::~Hen()
