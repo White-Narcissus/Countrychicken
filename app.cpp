@@ -1,265 +1,102 @@
 #include <iostream>
+#include <string>
 #include <format>
 #include <vector>
 #include "raylib.h"
-
-struct Egg
-{
-    Vector2 pos;
-    double spawntime;
-};
+#include "hen.h"
+#include <random>
+#include <chrono>
 
 Vector2 &borderRestrict(Vector2 &);
-bool clickTexture(const Vector2 &, int, int);
+bool clickTexture(const Vector2 &, int, int, int, int);
+std::vector<int> generateRandomInts(int count, int minValue, int maxValue);
+
+// 记录上次调用的时间
+static auto lastCallTime = std::chrono::steady_clock::now();
+const auto interval = std::chrono::seconds(5); // 5 秒间隔
 
 int main(int argc, char *argv[])
 {
-    // Create window
-    InitWindow(400, 300, "Countrychicken");
-    SetTargetFPS(60);
+    InitWindow(400, 300, "Countrychicken"); // create window
+    SetTargetFPS(60);                       // set FPS
+    const int ANIMATION_SPEED = 8;          // toggle all animations per 8 frame
 
     // Load background texture
     Texture2D bgTex = LoadTexture("./pixel art forest/background1.png");
     if (!IsTextureValid(bgTex))
         std::cout << "fail to load background image." << std::endl;
 
-    // Load hen texture: henTex[direction][frame]
-    // direction: 0=left, 1=right
-    Texture2D henTex[2][2];
-    for (int i = 0; i < 2; i++)
-    {
-        std::string leftPath = std::format("./Chickens Free/hen_left{}.png", i);
-        henTex[0][i] = LoadTexture(leftPath.c_str());
-
-        std::string rightPath = std::format("./Chickens Free/hen_right{}.png", i);
-        henTex[1][i] = LoadTexture(rightPath.c_str());
-    }
-
-    // Load chick texture: chickTex[direction][frame]
-    // direction: 0=left, 1=right
-    Texture2D chickTex[2][2];
-    for (int i = 0; i < 2; i++)
-    {
-        std::string leftPath = std::format("./Chickens Free/chick_left{}.png", i);
-        chickTex[0][i] = LoadTexture(leftPath.c_str());
-
-        std::string rightPath = std::format("./Chickens Free/chick_right{}.png", i);
-        chickTex[1][i] = LoadTexture(rightPath.c_str());
-    }
-
     // Load egg texture
     Texture2D eggTex = LoadTexture("./Chickens Free/egg0.png");
+    if (!IsTextureValid(eggTex))
+        std::cout << "fail to load background image." << std::endl;
 
-    const int ANIMATION_SPEED = 8; // toggle animation per 8 frame
-
-    // Hen status
-    Vector2 henpos = {100, 200};
-    Vector2 hen_velocity = {0, 0};
-    float hen_speed = 1.0f;   // move speed of hen（frame/second）
-    int hen_direction = 1;    // 0=left, 1=right
-    int hen_frame = 0; // current animation frame for hen (0-1)
-    int hen_frameCounter = 0; // animation counter for hen
-
-    // Chick status
-    Vector2 chickpos = {0, 0};
-    Vector2 chick_velocity = {0, 0};
-    float chick_speed = 0.5f;   // move speed of chick（frame/second）
-    int chick_direction = 0;    // 0=left, 1=right
-    int chick_frame = 0; // current animation frame for chick (0-1)
-    int chick_frameCounter = 0; // animation counter for chick
-    bool drawchick = false;
-
-    // Using vector store eggs
-    std::vector<Egg> eggs;
+    Hen hen;
+    std::vector<Chick> chicks;
 
     // Game main cycle
     while (!WindowShouldClose())
     {
-        // ========== 1. Deal with input ==========
-        hen_velocity = {0, 0};
+        hen.setVelocity({0, 0});
+        hen.control();
+        hen.update(ANIMATION_SPEED);
+        borderRestrict(hen.getpos());
 
-        // Key events for hen
-        if (IsKeyDown(KEY_W))
-            hen_velocity.y = -1;
-        if (IsKeyDown(KEY_S))
-            hen_velocity.y = 1;
-        if (IsKeyDown(KEY_A))
+        auto currentTime = std::chrono::steady_clock::now();
+        if (currentTime - lastCallTime >= interval)
         {
-            hen_velocity.x = -1;
-            hen_direction = 0; // To the left
-        }
-        if (IsKeyDown(KEY_D))
-        {
-            hen_velocity.x = 1;
-            hen_direction = 1; // To the right
-        }
-
-        // When key(WSAD) is released, reset hen_frameCounter and hen_frame
-        if (
-            IsKeyReleased(KEY_W) ||
-            IsKeyReleased(KEY_S) ||
-            IsKeyReleased(KEY_A) ||
-            IsKeyReleased(KEY_D))
-        {
-            hen_frameCounter = 0;
-            hen_frame = 0;
-        }
-
-        // ========== 2. Animation update ==========
-        // Only update animation when moving for hen
-        if (hen_velocity.x || hen_velocity.y)
-        {
-            hen_frameCounter++;
-            if (hen_frameCounter >= ANIMATION_SPEED)
+            for (auto &chick : chicks)
             {
-                hen_frameCounter = 0;
-                hen_frame = (hen_frame + 1) % 2;
-            }
-        }
-
-        // ========== 3. Update location ==========
-        henpos.x += hen_velocity.x * hen_speed;
-        henpos.y += hen_velocity.y * hen_speed;
-
-        if (drawchick)
-        {
-            chick_velocity = {0, 0};
-            // Key events for chick
-            if (IsKeyDown(KEY_UP))
-                chick_velocity.y = -1;
-            if (IsKeyDown(KEY_DOWN))
-                chick_velocity.y = 1;
-            if (IsKeyDown(KEY_LEFT))
-            {
-                chick_velocity.x = -1;
-                chick_direction = 0; // To the left
-            }
-            if (IsKeyDown(KEY_RIGHT))
-            {
-                chick_velocity.x = 1;
-                chick_direction = 1; // To the right
+                // 执行你的函数
+                chick.control(
+                    generateRandomInts(2, -1, 1),
+                    generateRandomInts(1, 0, 1));
             }
 
-            // When key(up, down, left, right) is released,
-            // reset chick_frameCounter and chick_frame
-            if (
-                IsKeyReleased(KEY_UP) ||
-                IsKeyReleased(KEY_DOWN) ||
-                IsKeyReleased(KEY_LEFT) ||
-                IsKeyReleased(KEY_RIGHT))
-            {
-                chick_frameCounter = 0;
-                chick_frame = 0;
-            }
-
-            // Only update animation when moving for chick
-            if (chick_velocity.x || chick_velocity.y)
-            {
-                chick_frameCounter++;
-                if (chick_frameCounter >= ANIMATION_SPEED)
-                {
-                    chick_frameCounter = 0;
-                    chick_frame = (chick_frame + 1) % 2;
-                }
-            }
-
-            chickpos.x += chick_velocity.x * chick_speed;
-            chickpos.y += chick_velocity.y * chick_speed;
-            borderRestrict(chickpos);
+            // 更新上次调用时间
+            lastCallTime = currentTime;
         }
 
-        // Hen lays an egg when KEY_L is pressed
-        if (IsKeyPressed(KEY_L))
+        for (auto &chick : chicks)
         {
-            Vector2 newEggPos = {henpos.x, henpos.y + 16};
-            Egg newegg = {newEggPos, GetTime()};
-            eggs.push_back(newegg);
-            std::cout
-                << std::format(
-                       "Lay egg! There are {} eggs on the ground. (at {:.2f}s)",
-                       eggs.size(), GetTime())
-                << std::endl;
+            chick.update(ANIMATION_SPEED);
+            borderRestrict(chick.getpos());
         }
 
-        double current_time = GetTime();
-        eggs.erase(
-            std::remove_if(eggs.begin(),
-                           eggs.end(),
-                           [current_time](const Egg &egg)
-                           { return current_time - egg.spawntime > 5.0; }),
-            eggs.end());
-
-        // border restrictions for hen and chick
-        borderRestrict(henpos);
-        // border restrictions for eggs
-        for (auto &egg : eggs)
-        {
-            borderRestrict(egg.pos);
-        }
-
-        // ========== 4. handle mouse input ==========
+        hen.maybeLayEggs();
+        hen.manageEggs(borderRestrict);
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            for (const auto &egg : eggs)
+            std::vector<Egg>::iterator it = hen.eggIsClicked(clickTexture);
+            if (it != hen.getEggsEnd() && chicks.size() < 10)
             {
-                if (clickTexture(egg.pos, GetMouseX(), GetMouseY()))
-                {
-                    if (drawchick)
-                    {
-                        std::cout
-                            << "At the same time, only one chick can exist!"
-                            << std::endl;
-                        break;
-                    }
-                    else
-                    {
-                        drawchick = true;
-                        chickpos = egg.pos;
-                        break;
-                    }
-                }
-            }
-        }
-        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-        {
-            if (drawchick &&
-                clickTexture(chickpos, GetMouseX(), GetMouseY()))
-            {
-                drawchick = false;
+                chicks.push_back(hen.incubate(it));
             }
         }
 
-        // ========== 5. Drawing ==========
+        // for (auto &chick : chicks)
+        // {
+        //     // 添加调试输出确认纹理是否有效
+        //     std::cout << "Left texture id: " << chick.ch_tex[0][0].id << std::endl;
+        //     std::cout << "Right texture id: " << chick.ch_tex[1][0].id << std::endl;
+        // }
+
+        // Drawing
         BeginDrawing();
         ClearBackground(WHITE); // clear the screen first
-
         DrawTexture(bgTex, 0, 0, WHITE);
-        DrawTextureV(henTex[hen_direction][hen_frame], henpos, WHITE);
-        if (drawchick)
-            DrawTextureV(chickTex[chick_direction][chick_frame],
-                         chickpos, WHITE);
-        for (const auto &egg : eggs)
-        {
-            DrawTextureV(eggTex, egg.pos, WHITE);
-        }
+        hen.drawHen();
+        for (auto &chick : chicks)
+            chick.drawChick();
+        hen.drawEggs(eggTex);
         DrawFPS(0, 0);
 
         EndDrawing();
     }
 
-    // ========== 6. release resource ==========
+    // Release resource
     UnloadTexture(bgTex);
-    for (int i = 0; i < 2; i++)
-    {
-        UnloadTexture(henTex[0][i]);
-        UnloadTexture(henTex[1][i]);
-    }
-    for (int i = 0; i < 2; i++)
-    {
-        UnloadTexture(chickTex[0][i]);
-        UnloadTexture(chickTex[1][i]);
-    }
     UnloadTexture(eggTex);
     CloseWindow();
 
@@ -280,14 +117,38 @@ Vector2 &borderRestrict(Vector2 &pos)
     return pos;
 }
 
-bool clickTexture(const Vector2 &pos, int mouse_posx, int mouse_posy)
+// check out mouse whether click the texture
+bool clickTexture(
+    const Vector2 &pos,
+    int mouse_posx, int mouse_posy,
+    int tex_width, int tex_height)
 {
 
     if (
         (
-            pos.x < mouse_posx && pos.x + 16 > mouse_posx) &&
-        (pos.y < mouse_posy && pos.y + 16 > mouse_posy))
+            pos.x < mouse_posx && pos.x + tex_width > mouse_posx) &&
+        (pos.y < mouse_posy && pos.y + tex_height > mouse_posy))
         return true;
     else
         return false;
+}
+
+std::vector<int> generateRandomInts(int count, int minValue, int maxValue)
+{
+    // 静态随机数引擎（只初始化一次）
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+
+    // 动态分布器（每次调用根据范围重新创建）
+    std::uniform_int_distribution<> dis(minValue, maxValue);
+
+    std::vector<int> result;
+    result.reserve(count);
+
+    for (int i = 0; i < count; i++)
+    {
+        result.push_back(dis(gen));
+    }
+
+    return result;
 }
