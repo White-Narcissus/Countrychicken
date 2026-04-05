@@ -47,7 +47,6 @@ int main(int argc, char *argv[])
         {
             for (auto &chick : chicks)
             {
-                // 执行你的函数
                 chick.control(
                     generateRandomInts(2, -1, 1),
                     generateRandomInts(1, 0, 1));
@@ -74,13 +73,6 @@ int main(int argc, char *argv[])
                 chicks.push_back(hen.incubate(it));
             }
         }
-
-        // for (auto &chick : chicks)
-        // {
-        //     // 添加调试输出确认纹理是否有效
-        //     std::cout << "Left texture id: " << chick.ch_tex[0][0].id << std::endl;
-        //     std::cout << "Right texture id: " << chick.ch_tex[1][0].id << std::endl;
-        // }
 
         // Drawing
         BeginDrawing();

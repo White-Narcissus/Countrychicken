@@ -3,6 +3,9 @@
 #include "raylib.h"
 
 Chick::Chick()
+    : ch_pos({0, 0}), ch_velocity({0, 0}),
+      ch_speed(0.5f), ch_direction(0),
+      ch_frame(0), ch_fcounter(0)
 {
     std::cout << "Chick constructor called!" << std::endl;
     for (int i = 0; i < 2; i++)
@@ -15,21 +18,52 @@ Chick::Chick()
         ch_tex[1][i] = LoadTexture(rightPath.c_str());
         std::cout << "Loaded: " << rightPath << " -> id=" << ch_tex[1][i].id << std::endl;
     }
-    ch_pos = {0, 0};
-    ch_velocity = {0, 0};
-    ch_speed = 0.5f;  // move speed of chick（frame/second）
-    ch_direction = 0; // 0=left, 1=right
-    ch_frame = 0;     // current animation frame for chick (0-1)
-    ch_fcounter = 0;  // animation counter for chick
-    id = GetTime();
+}
+
+Chick::Chick(const Chick &chick)
+    : ch_velocity({0, 0}), ch_speed(0.5f),
+      ch_direction(0), ch_frame(0),
+      ch_fcounter(0)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        std::string leftPath = std::format("./Chickens Free/chick_left{}.png", i);
+        this->ch_tex[0][i] = LoadTexture(leftPath.c_str());
+
+        std::string rightPath = std::format("./Chickens Free/chick_right{}.png", i);
+        this->ch_tex[1][i] = LoadTexture(rightPath.c_str());
+    }
+
+    // this->ch_pos = chick.getpos(); // error
+    this->ch_pos = chick.ch_pos;
+}
+
+const Chick &Chick::operator=(const Chick &chick)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        std::string leftPath = std::format("./Chickens Free/chick_left{}.png", i);
+        this->ch_tex[0][i] = LoadTexture(leftPath.c_str());
+
+        std::string rightPath = std::format("./Chickens Free/chick_right{}.png", i);
+        this->ch_tex[1][i] = LoadTexture(rightPath.c_str());
+    }
+    this->ch_pos = chick.ch_pos;
+    this->ch_velocity = chick.ch_velocity;
+    this->ch_speed = chick.ch_speed;
+    this->ch_direction = chick.ch_direction;
+    this->ch_frame = chick.ch_frame;
+    this->ch_fcounter = chick.ch_fcounter;
+
+    return *this;
 }
 
 Chick::~Chick()
 {
     for (int i = 0; i < 2; i++)
     {
-        UnloadTexture(ch_tex[0][i]);
-        UnloadTexture(ch_tex[1][i]);
+        UnloadTexture(this->ch_tex[0][i]);
+        UnloadTexture(this->ch_tex[1][i]);
     }
 }
 
@@ -66,9 +100,7 @@ Vector2 &Chick::getpos()
 
 void Chick::drawChick()
 {
-    // std::cout << id << ":\t";
-    // std::cout << "Drawing chick at (" << ch_pos.x << ", " << ch_pos.y
-    //           << ") direction=" << ch_direction << std::endl;
-    DrawTextureV(ch_tex[ch_direction][ch_frame],
-                 ch_pos, WHITE);
+    DrawTextureV(
+        ch_tex[ch_direction][ch_frame],
+        ch_pos, WHITE);
 }

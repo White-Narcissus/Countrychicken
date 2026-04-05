@@ -15,11 +15,12 @@ class Chick
     int ch_direction; // 0=left, 1=right
     int ch_frame;     // current animation frame for chick (0-1)
     int ch_fcounter;  // animation counter for chick
-    int id;
 
 public:
     // Chick methods
     Chick();
+    Chick(const Chick &chick);
+    const Chick &operator=(const Chick &chick);
     ~Chick();
     void control(std::vector<int> velocity, std::vector<int> direction);
     void update(const int ANIMATION_SPEED);
