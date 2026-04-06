@@ -3,9 +3,7 @@
 #include <random>
 #include <chrono>
 #include "raylib.h"
-#include "hen.h"
-#include "chick.h"
-#include "cock.h"
+#include "chicken.h"
 
 Vector2 &borderRestrict(Vector2 &);
 bool clickTexture(const Vector2 &, int, int, int, int);
@@ -34,17 +32,18 @@ int main(int argc, char *argv[])
     if (!IsTextureValid(eggTex))
         std::cout << "fail to load background image." << std::endl;
 
-    Hen myhen;
+    Hen myhen({200, 150});
     std::vector<Chick> chicks;
     std::vector<Cock> cocks;
+    std::vector<Hen> otherhens;
 
     // Game main cycle
     while (!WindowShouldClose())
     {
-        myhen.setVelocity({0, 0});
+        myhen.getVelocity() = {0, 0};
         myhen.control();
         myhen.update(ANIMATION_SPEED);
-        borderRestrict(myhen.getpos());
+        borderRestrict(myhen.getPos());
 
         auto currentTime = std::chrono::steady_clock::now();
         if (currentTime - lastCallTime >= interval)
@@ -63,6 +62,13 @@ int main(int argc, char *argv[])
                     generateRandomInts(1, 0, 1));
             }
 
+            for (auto &hen : otherhens)
+            {
+                hen.Chicken::control(
+                    generateRandomInts(2, -1, 1),
+                    generateRandomInts(1, 0, 1));
+            }
+
             // update lastCallTime
             lastCallTime = currentTime;
         }
@@ -70,16 +76,22 @@ int main(int argc, char *argv[])
         for (auto &chick : chicks)
         {
             chick.update(ANIMATION_SPEED);
-            borderRestrict(chick.getpos());
+            borderRestrict(chick.getPos());
         }
 
         for (auto &cock : cocks)
         {
             cock.update(ANIMATION_SPEED);
-            borderRestrict(cock.getpos());
+            borderRestrict(cock.getPos());
         }
 
-        myhen.maybeLayEggs();
+        for (auto &hen : otherhens)
+        {
+            hen.update(ANIMATION_SPEED);
+            borderRestrict(hen.getPos());
+        }
+
+        myhen.layEggs();
         myhen.manageEggs(borderRestrict);
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -87,7 +99,7 @@ int main(int argc, char *argv[])
             std::vector<Egg>::iterator it = myhen.eggIsClicked(clickTexture);
             if (it != myhen.getEggsEnd())
             {
-                if (chicks.size() < 10)
+                if (chicks.size() < 33)
                 {
                     chicks.push_back(myhen.incubate(it));
                     std::cout
@@ -96,7 +108,7 @@ int main(int argc, char *argv[])
                 }
                 else
                     std::cout
-                        << "At most, there can be 10 chicks at the same time"
+                        << "At most, there can be 33 chicks at the same time"
                         << std::endl;
             }
         }
@@ -105,31 +117,55 @@ int main(int argc, char *argv[])
             std::vector<Chick>::iterator it = chickIsClicked(chicks, clickTexture);
             if (it != chicks.end())
             {
-                if (cocks.size() < 3)
+                if (otherhens.size() >= 5 || cocks.size() >= 5)
                 {
-                    cocks.push_back(it->growToCock(it));
-                    chicks.erase(it);
                     std::cout
-                        << "A chick has grown to a cock!"
+                        << "There are too many cocks or other hens, "
+                        << "please sell some."
                         << std::endl;
                 }
                 else
-                    std::cout
-                        << "At most, there can be 3 cocks at the same time"
-                        << std::endl;
+                {
+                    int gender = generateRandomInts(1, 0, 1)[0]; // 0=female, 1=male
+                    if (gender)
+                    {
+                        cocks.push_back(it->growToCock(it));
+                        chicks.erase(it);
+                        std::cout
+                            << "A chick has grown up to a cock!"
+                            << std::endl;
+                    }
+                    else
+                    {
+                        otherhens.push_back(it->growToHen(it));
+                        chicks.erase(it);
+                        std::cout
+                            << "A chick has grown up to a hen!"
+                            << std::endl;
+                    }
+                }
             }
         }
 
         // Drawing
         BeginDrawing();
+
         ClearBackground(WHITE); // clear the screen first
+
         DrawTexture(bgTex, 0, 0, WHITE);
-        myhen.drawHen();
-        for (auto &chick : chicks)
-            chick.drawChick();
-        for (auto &cock : cocks)
-            cock.drawCock();
+
+        myhen.draw();
         myhen.drawEggs(eggTex);
+
+        for (auto &chick : chicks)
+            chick.draw();
+
+        for (auto &cock : cocks)
+            cock.draw();
+
+        for (auto &hen : otherhens)
+            hen.draw();
+
         DrawFPS(0, 0);
 
         EndDrawing();
@@ -138,6 +174,7 @@ int main(int argc, char *argv[])
     // Release resource
     UnloadTexture(bgTex);
     UnloadTexture(eggTex);
+    
     CloseWindow();
 
     return 0;
@@ -199,7 +236,7 @@ std::vector<Chick>::iterator chickIsClicked(
 {
     for (std::vector<Chick>::iterator it = chicks.begin(); it != chicks.end(); it++)
     {
-        if (pfunc(it->getpos(), GetMouseX(), GetMouseY(), 16, 16))
+        if (pfunc(it->getPos(), GetMouseX(), GetMouseY(), 16, 16))
         {
             return it;
         }
