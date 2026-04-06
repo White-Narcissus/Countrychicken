@@ -3,6 +3,7 @@
 #include <random>
 #include <chrono>
 #include "raylib.h"
+#include "raygui.h"
 #include "chicken.h"
 
 Vector2 &borderRestrict(Vector2 &);
@@ -36,6 +37,10 @@ int main(int argc, char *argv[])
     std::vector<Chick> chicks;
     std::vector<Cock> cocks;
     std::vector<Hen> otherhens;
+
+    Rectangle sell_cock_btn = {360, 0, 40, 30};
+    Rectangle sell_hen_btn = {360, 270, 40, 30};
+    Rectangle sell_chick_btn = {0, 270, 40, 30};
 
     // Game main cycle
     while (!WindowShouldClose())
@@ -149,24 +154,68 @@ int main(int argc, char *argv[])
 
         // Drawing
         BeginDrawing();
-
         ClearBackground(WHITE); // clear the screen first
-
         DrawTexture(bgTex, 0, 0, WHITE);
-
         myhen.draw();
         myhen.drawEggs(eggTex);
-
         for (auto &chick : chicks)
             chick.draw();
-
         for (auto &cock : cocks)
             cock.draw();
-
         for (auto &hen : otherhens)
             hen.draw();
-
         DrawFPS(0, 0);
+
+        // button to sell cocks
+        if (GuiButton(sell_cock_btn, "sell cocks"))
+        {
+            if (!cocks.empty())
+            {
+                cocks.erase(cocks.begin());
+                std::cout
+                    << "Sell one cock, remain "
+                    << cocks.size()
+                    << std::endl;
+            }
+            else
+            {
+                std::cout << "have no cocks to sell" << std::endl;
+            }
+        }
+
+        // button to sell hens
+        if (GuiButton(sell_hen_btn, "sell hens"))
+        {
+            if (!otherhens.empty())
+            {
+                otherhens.erase(otherhens.begin());
+                std::cout
+                    << "Sell one hen, remain "
+                    << otherhens.size()
+                    << std::endl;
+            }
+            else
+            {
+                std::cout << "have no hens to sell" << std::endl;
+            }
+        }
+
+        // button to sell chicks
+        if (GuiButton(sell_chick_btn, "sell chicks"))
+        {
+            if (!chicks.empty())
+            {
+                chicks.erase(chicks.begin());
+                std::cout
+                    << "Sell one chick, remain "
+                    << chicks.size()
+                    << std::endl;
+            }
+            else
+            {
+                std::cout << "have no chicks to sell" << std::endl;
+            }
+        }
 
         EndDrawing();
     }
@@ -174,7 +223,7 @@ int main(int argc, char *argv[])
     // Release resource
     UnloadTexture(bgTex);
     UnloadTexture(eggTex);
-    
+
     CloseWindow();
 
     return 0;
