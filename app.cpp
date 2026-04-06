@@ -1,19 +1,22 @@
 #include <iostream>
-#include <string>
-#include <format>
 #include <vector>
-#include "raylib.h"
-#include "hen.h"
 #include <random>
 #include <chrono>
+#include "raylib.h"
+#include "hen.h"
+#include "chick.h"
+#include "cock.h"
 
 Vector2 &borderRestrict(Vector2 &);
 bool clickTexture(const Vector2 &, int, int, int, int);
 std::vector<int> generateRandomInts(int count, int minValue, int maxValue);
+std::vector<Chick>::iterator chickIsClicked(
+    std::vector<Chick> &chicks,
+    bool (*pfunc)(const Vector2 &, int, int, int, int));
 
-// 记录上次调用的时间
+// record the time of the last call
 static auto lastCallTime = std::chrono::steady_clock::now();
-const auto interval = std::chrono::seconds(5); // 5 秒间隔
+const auto interval = std::chrono::seconds(5); // set interval as 5 second
 
 int main(int argc, char *argv[])
 {
@@ -31,29 +34,36 @@ int main(int argc, char *argv[])
     if (!IsTextureValid(eggTex))
         std::cout << "fail to load background image." << std::endl;
 
-    Hen hen;
+    Hen myhen;
     std::vector<Chick> chicks;
+    std::vector<Cock> cocks;
 
     // Game main cycle
     while (!WindowShouldClose())
     {
-        hen.setVelocity({0, 0});
-        hen.control();
-        hen.update(ANIMATION_SPEED);
-        borderRestrict(hen.getpos());
+        myhen.setVelocity({0, 0});
+        myhen.control();
+        myhen.update(ANIMATION_SPEED);
+        borderRestrict(myhen.getpos());
 
         auto currentTime = std::chrono::steady_clock::now();
         if (currentTime - lastCallTime >= interval)
         {
             for (auto &chick : chicks)
             {
-                // 执行你的函数
                 chick.control(
                     generateRandomInts(2, -1, 1),
                     generateRandomInts(1, 0, 1));
             }
 
-            // 更新上次调用时间
+            for (auto &cock : cocks)
+            {
+                cock.control(
+                    generateRandomInts(2, -1, 1),
+                    generateRandomInts(1, 0, 1));
+            }
+
+            // update lastCallTime
             lastCallTime = currentTime;
         }
 
@@ -63,15 +73,50 @@ int main(int argc, char *argv[])
             borderRestrict(chick.getpos());
         }
 
-        hen.maybeLayEggs();
-        hen.manageEggs(borderRestrict);
+        for (auto &cock : cocks)
+        {
+            cock.update(ANIMATION_SPEED);
+            borderRestrict(cock.getpos());
+        }
+
+        myhen.maybeLayEggs();
+        myhen.manageEggs(borderRestrict);
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            std::vector<Egg>::iterator it = hen.eggIsClicked(clickTexture);
-            if (it != hen.getEggsEnd() && chicks.size() < 10)
+            std::vector<Egg>::iterator it = myhen.eggIsClicked(clickTexture);
+            if (it != myhen.getEggsEnd())
             {
-                chicks.push_back(hen.incubate(it));
+                if (chicks.size() < 10)
+                {
+                    chicks.push_back(myhen.incubate(it));
+                    std::cout
+                        << "A chick is incubated successfully!"
+                        << std::endl;
+                }
+                else
+                    std::cout
+                        << "At most, there can be 10 chicks at the same time"
+                        << std::endl;
+            }
+        }
+        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        {
+            std::vector<Chick>::iterator it = chickIsClicked(chicks, clickTexture);
+            if (it != chicks.end())
+            {
+                if (cocks.size() < 3)
+                {
+                    cocks.push_back(it->growToCock(it));
+                    chicks.erase(it);
+                    std::cout
+                        << "A chick has grown to a cock!"
+                        << std::endl;
+                }
+                else
+                    std::cout
+                        << "At most, there can be 3 cocks at the same time"
+                        << std::endl;
             }
         }
 
@@ -79,10 +124,12 @@ int main(int argc, char *argv[])
         BeginDrawing();
         ClearBackground(WHITE); // clear the screen first
         DrawTexture(bgTex, 0, 0, WHITE);
-        hen.drawHen();
+        myhen.drawHen();
         for (auto &chick : chicks)
             chick.drawChick();
-        hen.drawEggs(eggTex);
+        for (auto &cock : cocks)
+            cock.drawCock();
+        myhen.drawEggs(eggTex);
         DrawFPS(0, 0);
 
         EndDrawing();
@@ -128,11 +175,11 @@ bool clickTexture(
 
 std::vector<int> generateRandomInts(int count, int minValue, int maxValue)
 {
-    // 静态随机数引擎（只初始化一次）
+    // static random number engine
     static std::random_device rd;
     static std::mt19937 gen(rd());
 
-    // 动态分布器（每次调用根据范围重新创建）
+    // dynamic distributor
     std::uniform_int_distribution<> dis(minValue, maxValue);
 
     std::vector<int> result;
@@ -144,4 +191,18 @@ std::vector<int> generateRandomInts(int count, int minValue, int maxValue)
     }
 
     return result;
+}
+
+std::vector<Chick>::iterator chickIsClicked(
+    std::vector<Chick> &chicks,
+    bool (*pfunc)(const Vector2 &, int, int, int, int))
+{
+    for (std::vector<Chick>::iterator it = chicks.begin(); it != chicks.end(); it++)
+    {
+        if (pfunc(it->getpos(), GetMouseX(), GetMouseY(), 16, 16))
+        {
+            return it;
+        }
+    }
+    return chicks.end();
 }

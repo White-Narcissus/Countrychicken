@@ -1,9 +1,10 @@
 #ifndef CHICK_H_
 #define CHICK_H_
 
-#include "raylib.h"
-#include <format>
+
 #include <vector>
+#include "raylib.h"
+#include "cock.h"
 
 class Chick
 {
@@ -29,7 +30,9 @@ public:
     void control(std::vector<int> velocity, std::vector<int> direction);
     void update(const int ANIMATION_SPEED);
     Vector2 &getpos();
+    Cock growToCock(std::vector<Chick>::iterator &it);
     void drawChick();
 };
+
 
 #endif

@@ -1,13 +1,13 @@
+#include <string>
+#include <format>
 #include "chick.h"
-#include <iostream>
 #include "raylib.h"
 
 Chick::Chick()
     : ch_pos({0, 0}), ch_velocity({0, 0}),
-      ch_speed(0.5f), ch_direction(0),
+      ch_speed(0.3f), ch_direction(0),
       ch_frame(0), ch_fcounter(0)
 {
-    std::cout << "Chick constructor called!" << std::endl;
     for (int i = 0; i < 2; i++)
     {
         std::string leftPath = std::format("./Chickens Free/chick_left{}.png", i);
@@ -104,6 +104,13 @@ void Chick::update(const int ANIMATION_SPEED)
 Vector2 &Chick::getpos()
 {
     return ch_pos;
+}
+
+Cock Chick::growToCock(std::vector<Chick>::iterator &it)
+{
+    Cock cock;
+    cock.getpos() = it->ch_pos;
+    return cock;
 }
 
 void Chick::drawChick()

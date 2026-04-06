@@ -1,12 +1,10 @@
 #ifndef HEN_H_
 #define HEN_H_
 
-#include "raylib.h"
-#include <iostream>
-#include <format>
+
 #include <vector>
+#include "raylib.h"
 #include "chick.h"
-#include <algorithm>
 
 struct Egg
 {
@@ -38,11 +36,12 @@ public:
     void drawEggs(Texture2D egg_tex);
     void maybeLayEggs();
     void manageEggs(Vector2 &(*pfunc)(Vector2 &));
-    Chick incubate(std::vector<Egg>::iterator it);
+    Chick incubate(std::vector<Egg>::iterator &it);
     std::vector<Egg>::iterator getEggsEnd();
     std::vector<Egg>::iterator
     eggIsClicked(
         bool (*pfunc)(const Vector2 &, int, int, int, int));
 };
+
 
 #endif

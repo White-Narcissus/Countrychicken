@@ -1,4 +1,8 @@
+#include <algorithm>
+#include <iostream>
+#include <format>
 #include "hen.h"
+#include "chick.h"
 
 Hen::Hen()
     : h_pos{100, 200}, h_velocity{0, 0},
@@ -127,7 +131,7 @@ void Hen::manageEggs(Vector2 &(*pfunc)(Vector2 &))
     }
 }
 
-Chick Hen::incubate(std::vector<Egg>::iterator it)
+Chick Hen::incubate(std::vector<Egg>::iterator &it)
 {
     Chick chick;
     chick.getpos() = it->pos;
