@@ -4,6 +4,7 @@
 #include <chrono>
 #include "raylib.h"
 #include "chicken.h"
+#include "button.h"
 
 Vector2 &borderRestrict(Vector2 &);
 bool clickTexture(const Vector2 &, int, int, int, int);
@@ -36,6 +37,14 @@ int main(int argc, char *argv[])
     std::vector<Chick> chicks;
     std::vector<Cock> cocks;
     std::vector<Hen> otherhens;
+
+    Button sellCockBtn(350, 0, 50, 30, "Scock");
+    Button sellHenBtn(350, 270, 50, 30, "Shen");
+    Button sellChickBtn(0, 270, 50, 30, "Schick");
+
+    // color can be customized
+    sellCockBtn.setNormalColor(BLUE);
+    sellCockBtn.setHoverColor(SKYBLUE);
 
     // Game main cycle
     while (!WindowShouldClose())
@@ -166,6 +175,46 @@ int main(int argc, char *argv[])
         for (auto &hen : otherhens)
             hen.draw();
 
+        // deal with button
+        if (sellCockBtn.updateAndDraw())
+        {
+            if (!cocks.empty())
+            {
+                cocks.erase(cocks.begin());
+                std::cout << "sell a cock, remain " << cocks.size() << std::endl;
+            }
+            else
+            {
+                std::cout << "have no cocks to sell" << std::endl;
+            }
+        }
+
+        if (sellHenBtn.updateAndDraw())
+        {
+            if (!otherhens.empty())
+            {
+                otherhens.erase(otherhens.begin());
+                std::cout << "sell a hen, remain " << otherhens.size() << std::endl;
+            }
+            else
+            {
+                std::cout << "have no hens to sell" << std::endl;
+            }
+        }
+
+        if (sellChickBtn.updateAndDraw())
+        {
+            if (!chicks.empty())
+            {
+                chicks.erase(chicks.begin());
+                std::cout << "sell a chick, remain " << chicks.size() << std::endl;
+            }
+            else
+            {
+                std::cout << "have no chicks to sell" << std::endl;
+            }
+        }
+
         DrawFPS(0, 0);
 
         EndDrawing();
@@ -174,7 +223,7 @@ int main(int argc, char *argv[])
     // Release resource
     UnloadTexture(bgTex);
     UnloadTexture(eggTex);
-    
+
     CloseWindow();
 
     return 0;
